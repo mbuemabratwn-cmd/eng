@@ -179,6 +179,35 @@ export default function DashboardPage() {
         {/* Weekly Reviews */}
         <section className="dashboard-section">
           <h3>每周复习</h3>
+          <button
+            className="generate-review-btn"
+            onClick={async () => {
+              try {
+                const now = new Date()
+                const dayOfWeek = now.getDay()
+                const monday = new Date(now)
+                monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
+                const sunday = new Date(monday)
+                sunday.setDate(monday.getDate() + 6)
+                const weekStart = monday.toISOString().split('T')[0]
+                const weekEnd = sunday.toISOString().split('T')[0]
+                await window.appApi.createWeeklyReview({
+                  weekStart,
+                  weekEnd,
+                  summary: '手动生成的周复盘',
+                  strengths: [],
+                  recommendations: []
+                })
+                // Reload reviews
+                const reviews = await window.appApi.getRecentWeeklyReviews(5)
+                setWeeklyReviews(reviews)
+              } catch (err) {
+                console.error('Failed to generate weekly review:', err)
+              }
+            }}
+          >
+            生成本周复盘
+          </button>
           {weeklyReviews.length > 0 ? (
             <div className="review-list">
               {weeklyReviews.map(review => (

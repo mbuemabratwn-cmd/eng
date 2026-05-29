@@ -608,6 +608,15 @@ function registerIPC() {
     }
     stateManager.setActiveBlock(activeBlock.id)
     stateManager.transition('USER_STARTS_LEARNING', { blockId: activeBlock.id })
+    // Auto-trigger weekly review on Monday
+    const now = new Date()
+    if (now.getDay() === 1) {
+      try {
+        summaryModule.createAutoWeeklyReview()
+      } catch (e) {
+        console.error('[WeeklyReview] Auto-create failed:', e)
+      }
+    }
     if (payload?.task) {
       stateManager.transition('USER_SWITCHES_MODE', { task: payload.task, teacherMode: payload.teacherMode })
     }
