@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ESNext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "outDir": "./dist/renderer",
+    "rootDir": "./src"
+  },
+  "include": ["src/renderer/**/*", "src/shared/**/*"]
+}

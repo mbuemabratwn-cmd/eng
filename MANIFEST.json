@@ -1,0 +1,41 @@
+{
+  "AUTONOMY_RULES.md": {
+    "bytes": 2152
+  },
+  "DECISIONS.md": {
+    "bytes": 169
+  },
+  "GOAL.md": {
+    "bytes": 1109
+  },
+  "PHASES.md": {
+    "bytes": 10372
+  },
+  "PLAN.md": {
+    "bytes": 1186
+  },
+  "PROGRESS.md": {
+    "bytes": 945
+  },
+  "README.md": {
+    "bytes": 1848
+  },
+  "docs/ai-contracts.md": {
+    "bytes": 5277
+  },
+  "docs/architecture.md": {
+    "bytes": 98754
+  },
+  "docs/coding-rules.md": {
+    "bytes": 3179
+  },
+  "docs/mvp-scope.md": {
+    "bytes": 4617
+  },
+  "docs/product-design.md": {
+    "bytes": 82983
+  },
+  "docs/source-full-design.md": {
+    "bytes": 181201
+  }
+}

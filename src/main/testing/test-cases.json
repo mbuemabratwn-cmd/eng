@@ -1,0 +1,148 @@
+{
+  "version": "1.0",
+  "description": "AI 英语老师测试用例集",
+  "testCases": [
+    {
+      "id": "word_meaning_basic",
+      "category": "vocabulary",
+      "description": "基础词义询问",
+      "input": "abandon 是什么意思？",
+      "expectedBehavior": {
+        "shouldContainAnswer": true,
+        "shouldNotBeCustomerService": true,
+        "shouldNotAskTooManyQuestions": true
+      },
+      "evaluationCriteria": {
+        "containsWordMeaning": true,
+        "hasExampleSentence": false,
+        "responseLength": "medium"
+      }
+    },
+    {
+      "id": "word_usage_context",
+      "category": "vocabulary",
+      "description": "词汇用法语境",
+      "input": "ambiguous 在考研阅读里怎么用？",
+      "expectedBehavior": {
+        "shouldContainAnswer": true,
+        "shouldProvideContext": true,
+        "shouldNotBeCustomerService": true
+      },
+      "evaluationCriteria": {
+        "containsUsageContext": true,
+        "mentionsExamRelevance": true,
+        "responseLength": "medium"
+      }
+    },
+    {
+      "id": "grammar_correction",
+      "category": "grammar",
+      "description": "语法纠错",
+      "input": "He don't like apple.",
+      "expectedBehavior": {
+        "shouldCorrectError": true,
+        "shouldExplainWhy": true,
+        "shouldNotOverCorrect": true
+      },
+      "evaluationCriteria": {
+        "identifiesSubjectVerbAgreement": true,
+        "providesCorrectVersion": true,
+        "explanationClear": true
+      }
+    },
+    {
+      "id": "sentence_analysis",
+      "category": "long_sentence",
+      "description": "长难句分析",
+      "input": "The fact that the government has decided to implement stricter environmental regulations has caused significant debate among industry leaders.",
+      "expectedBehavior": {
+        "shouldIdentifyMainStructure": true,
+        "shouldBreakDownClauses": true,
+        "shouldNotOverSimplify": true
+      },
+      "evaluationCriteria": {
+        "identifiesMainClause": true,
+        "explainsSubordinateClauses": true,
+        "providesTranslation": true
+      }
+    },
+    {
+      "id": "free_chat_natural",
+      "category": "conversation",
+      "description": "自然对话",
+      "input": "I'm feeling tired today.",
+      "expectedBehavior": {
+        "shouldRespondNaturally": true,
+        "shouldNotBeCustomerService": true,
+        "shouldNotOverEncourage": true
+      },
+      "evaluationCriteria": {
+        "naturalResponse": true,
+        "noCustomerServiceOpening": true,
+        "appropriateLength": true
+      }
+    },
+    {
+      "id": "direct_answer_request",
+      "category": "conversation",
+      "description": "直接回答请求",
+      "input": "直接告诉我答案。",
+      "expectedBehavior": {
+        "shouldGiveDirectAnswer": true,
+        "shouldAddTransferHint": true,
+        "shouldNotAskMoreQuestions": true
+      },
+      "evaluationCriteria": {
+        "providesDirectAnswer": true,
+        "addsBriefLearningTip": true,
+        "noFurtherQuestions": true
+      }
+    },
+    {
+      "id": "summary_request",
+      "category": "summary",
+      "description": "总结请求",
+      "input": "总结一下今天学了什么。",
+      "expectedBehavior": {
+        "shouldSummarizeKeyPoints": true,
+        "shouldNotBeTooLong": true,
+        "shouldNotOverPraise": true
+      },
+      "evaluationCriteria": {
+        "coversMainTopics": true,
+        "conciseAndFocused": true,
+        "providesNextStep": true
+      }
+    },
+    {
+      "id": "error_recovery",
+      "category": "error_handling",
+      "description": "错误恢复",
+      "input": "我不明白你刚才说的。",
+      "expectedBehavior": {
+        "shouldClarifyPreviousPoint": true,
+        "shouldSimplifyExplanation": true,
+        "shouldNotRepeatSameExplanation": true
+      },
+      "evaluationCriteria": {
+        "clarifiesEffectively": true,
+        "usesSimplerLanguage": true,
+        "avoidsRepetition": true
+      }
+    }
+  ],
+  "evaluationMetrics": {
+    "responseQuality": {
+      "weight": 0.4,
+      "criteria": ["accuracy", "completeness", "clarity"]
+    },
+    "teachingEffectiveness": {
+      "weight": 0.3,
+      "criteria": ["scaffolding", "adaptation", "engagement"]
+    },
+    "styleCompliance": {
+      "weight": 0.3,
+      "criteria": ["noCustomerService", "noExcessiveEncouragement", "naturalTone"]
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "name": "ai-english-learning",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI English learning desktop app for postgraduate exam preparation",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "typecheck": "tsc --noEmit",
+    "typecheck:main": "tsc -p tsconfig.node.json --noEmit",
+    "typecheck:renderer": "tsc -p tsconfig.web.json --noEmit",
+    "lint": "eslint src --ext .ts,.tsx",
+    "start": "electron-vite preview",
+    "package": "electron-vite build && electron-builder build --config"
+  },
+  "build": {
+    "appId": "com.ai-english-learning.app",
+    "productName": "AI English Learning",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*"
+    ],
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icon.icns"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "build/icon.png"
+    }
+  },
+  "dependencies": {
+    "archiver": "^8.0.0",
+    "better-sqlite3": "^11.7.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^10.1.0"
+  },
+  "devDependencies": {
+    "@types/archiver": "^7.0.0",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@typescript-eslint/eslint-plugin": "^8.14.0",
+    "@typescript-eslint/parser": "^8.14.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^33.2.0",
+    "electron-builder": "^26.8.1",
+    "electron-vite": "^2.3.0",
+    "eslint": "^9.14.0",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}
