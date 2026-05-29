@@ -316,7 +316,9 @@
   - 初始加载 50 条 ✓
   - "加载更多"按钮 ✓
   - hasMore/loadingMore 状态管理 ✓
-- [ ] 3.2.3 长 Markdown 回复折叠（待实现）
+- [x] 3.2.3 长 Markdown 回复折叠
+  - 超过 500 字符的 AI 回复默认折叠 ✓
+  - 点击"展开全文"/"收起"切换 ✓
 
 **验证**：
 - [x] 初始加载 50 条
@@ -737,3 +739,36 @@
 - [x] 设计文档所有验收标准满足
 - [x] git status clean
 - [!] PR 创建（需要配置远程仓库）
+
+---
+
+## 设计文档偏差记录
+
+### 运行时验证项（无法在 CLI 环境完成）
+
+以下验证项需要启动 Electron 应用并进行交互操作，在当前 CLI 环境中无法自动完成。代码实现已就绪，需手动验证：
+
+| 项目 | 状态 | 说明 |
+|------|------|------|
+| 1.1 上传 CSV → 词汇入库 | 代码就绪 | processImportCandidates + addWordWithProgress 已实现 |
+| 1.2 Job handler 执行 | 代码就绪 | file_import/memory_update/daily_summary/weekly_review handlers 已注册 |
+| 2.5 FSRS 复习间隔变化 | 代码就绪 | FSRSScheduler + recordReview 已集成，17 个单元测试通过 |
+| 4.1 输出质量检查 | 代码就绪 | OutputLinter 已集成到 AIOrchestrator |
+| 5.3 Slash 命令菜单 | 代码就绪 | SlashCommandMenu 组件已创建，10+ 命令可用 |
+
+### 设计文档 P1/P2 增强项
+
+以下为设计文档推荐但非 MVP 阻塞项：
+
+| 项目 | 优先级 | 状态 | 说明 |
+|------|--------|------|------|
+| 虚拟列表 | P2 | 未实现 | 当前使用分页加载（50条/页），满足 27.4 要求 |
+| ArchiveAndCompactionService | P1 | 部分实现 | daily_summaries + weekly_reviews 已实现摘要压缩 |
+| 多层任务栈 | P2 | 简化版 | 当前支持一层打断恢复 |
+| 数据库健康检查 UI | P1 | 后端已实现 | DatabaseHealthService 存在，前端未暴露 |
+| ReviewLoadManager 完整阈值 | P1 | 简化版 | review-load-manager.ts 存在，使用简单阈值 |
+| 云备份 | P2 | 未实现 | 本地备份/恢复/导出已完成 |
+
+### Git 远程仓库
+
+当前无远程仓库配置，无法执行 `git push` 和创建 PR。需要用户提供远程仓库 URL。
