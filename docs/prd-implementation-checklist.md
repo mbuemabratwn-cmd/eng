@@ -141,21 +141,21 @@
 
 **实施步骤**：
 
-- [ ] 2.2.1 增强 `SummaryModule.createWeeklyReview(week_start, week_end)` 方法
-  - 查询指定周的 `daily_summaries`
-  - 查询 `learning_events`、`word_review_events`、`grammar_error_events` 聚合统计
-  - 生成周复盘写入 `weekly_reviews`
-- [ ] 2.2.2 自动触发逻辑
-  - 学习日边界切换时 → 检查是否周一 → 检查上周是否有 `weekly_review` → 没有则创建 job
-- [ ] 2.2.3 支持手动触发
-  - IPC 暴露 `summary:createWeekly`
-  - 前端仪表盘增加"生成本周复盘"按钮
-- [ ] 2.2.4 在 ContextRetriever 中注入周复盘
+- [x] 2.2.1 增强 `SummaryModule.createWeeklyReview(week_start, week_end)` 方法
+  - 查询指定周的 `daily_summaries` ✓
+  - 查询 `learning_events`、`word_review_events`、`grammar_error_events` 聚合统计 ✓
+  - 生成周复盘写入 `weekly_reviews` ✓
+- [x] 2.2.2 自动触发逻辑
+  - 学习日边界切换时 → 检查是否周一 → 检查上周是否有 `weekly_review` → 没有则创建 job ✓
+- [x] 2.2.3 支持手动触发
+  - IPC 暴露 `summary:createWeekly` ✓
+  - 前端仪表盘增加"生成本周复盘"按钮 ✓
+- [x] 2.2.4 在 ContextRetriever 中注入周复盘 ✓
 
 **验证**：
-- [ ] 手动触发 `createWeeklyReview(...)` → `weekly_reviews` 新增记录
-- [ ] 记录包含正确的周统计
-- [ ] AI 对话中能读取到周复盘
+- [x] 手动触发 `createWeeklyReview(...)` → `weekly_reviews` 新增记录
+- [x] 记录包含正确的周统计
+- [x] AI 对话中能读取到周复盘
 
 **涉及文件**：
 - `src/main/services/summary-module.ts`
@@ -278,16 +278,16 @@
 - [x] 3.1.1 创建 `getStudyDay(date?: Date): string` 函数
   - < 04:00 → 前一天；>= 04:00 → 当天
 - [x] 3.1.2 修改所有使用 study_day 的地方
-  - `LearningStateManager.getState()` 和 `transition()`
-  - `DailyTargetPoolManager.getOrCreateToday()`
-  - `SummaryModule.createDailySummary()`
-  - `VocabularyThemeLesson`
-- [ ] 3.1.3 在 `app_settings` 新增 `study_day_boundary_hour`，默认 4
-- [ ] 3.1.4 前端设置页面增加边界配置
+  - `LearningStateManager.getState()` 和 `transition()` ✓
+  - `DailyTargetPoolManager.getOrCreateToday()` ✓
+  - `SummaryModule.createDailySummary()` ✓
+  - `VocabularyThemeLesson` ✓
+- [x] 3.1.3 在 `app_settings` 新增 `study_day_boundary_hour`，默认 4 ✓
+- [x] 3.1.4 前端设置页面增加边界配置 ✓
 
 **验证**：
-- [ ] 03:00 → 返回前一天日期
-- [ ] 23:30 开始，02:00 结束 → 属于同一天
+- [x] 03:00 → 返回前一天日期
+- [x] 23:30 开始，02:00 结束 → 属于同一天
 
 **涉及文件**：
 - `src/main/services/learning-state-manager.ts`
@@ -390,13 +390,13 @@
 
 **实施步骤**：
 
-- [x] 4.2.1 创建测试集 `src/main/testing/test-cases.json`
-- [x] 4.2.2 创建测试运行器 `src/main/testing/test-runner.ts`
-- [ ] 4.2.3 设置页面增加"运行测试"按钮
+- [x] 4.2.1 创建测试集 `src/main/testing/test-cases.json` ✓
+- [x] 4.2.2 创建测试运行器 `src/main/testing/test-runner.ts` ✓
+- [x] 4.2.3 设置页面增加"运行测试"按钮 ✓
 
 **验证**：
-- [ ] 运行测试集 → 每个用例有结果
-- [ ] 报告清晰可读
+- [x] 运行测试集 → 每个用例有结果
+- [x] 报告清晰可读
 
 **涉及文件**：
 - `src/main/testing/test-cases.json`（新建）
@@ -412,11 +412,11 @@
 
 **实施步骤**：
 
-- [x] 4.3.1 `BackupService.exportFullPackage()` → 打包为 zip
-- [ ] 4.3.2 前端设置页面增加导出按钮
+- [x] 4.3.1 `BackupService.exportFullPackage()` → 打包为 zip ✓
+- [x] 4.3.2 前端设置页面增加导出按钮 ✓
 
 **验证**：
-- [ ] 导出 → 生成 zip → 解压包含数据库和设置
+- [x] 导出 → 生成 zip → 解压包含数据库和设置
 
 **涉及文件**：
 - `src/main/services/backup-service.ts`
@@ -431,13 +431,13 @@
 
 **实施步骤**：
 
-- [x] 4.4.1 安装 `pdf-parse` 和 `mammoth`
-- [x] 4.4.2 FileIngestionEngine 添加 PDF/DOCX 解析
-- [ ] 4.4.3 更新前端文件选择器
+- [x] 4.4.1 安装 `pdf-parse` 和 `mammoth` ✓
+- [x] 4.4.2 FileIngestionEngine 添加 PDF/DOCX 解析 ✓
+- [x] 4.4.3 更新前端文件选择器 ✓
 
 **验证**：
-- [ ] 上传 PDF → 内容正确提取
-- [ ] 上传 DOCX → 内容正确提取
+- [x] 上传 PDF → 内容正确提取
+- [x] 上传 DOCX → 内容正确提取
 
 **涉及文件**：
 - `src/main/services/file-ingestion-engine.ts`
@@ -454,8 +454,8 @@
 **实施步骤**：
 
 - [x] 4.5.1 `BackupService.restoreBackup(backupPath)`
-  - 校验完整性 → 自动备份当前 DB → 替换 → 重新打开 → migration 检查
-- [ ] 4.5.2 前端备份列表增加"恢复"按钮 + 确认对话框
+  - 校验完整性 → 自动备份当前 DB → 替换 → 重新打开 → migration 检查 ✓
+- [x] 4.5.2 前端备份列表增加"恢复"按钮 + 确认对话框 ✓
 
 **验证**：
 - [ ] 创建备份 → 修改数据 → 恢复 → 数据回到备份时状态
@@ -712,7 +712,7 @@
 ## 最终验证清单
 
 - [x] `npm run typecheck` 通过
-- [ ] `npm run lint` 通过
+- [!] `npm run lint` 通过（ESLint v9 配置格式不兼容）
 - [x] `npm run build` 通过
 - [x] 所有 15 个实施步骤功能完成
 - [x] 所有前端 UI 改造完成

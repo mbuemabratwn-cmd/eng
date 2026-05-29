@@ -170,6 +170,8 @@ export interface AppApi {
   readFileContent: (filePath: string) => Promise<{ filename: string; content: string }>
   getJobStatus: (jobId: number) => Promise<{ id: number; type: string; status: string; payload: string | null; error: string | null; attempts: number; created_at: string; updated_at: string } | null>
   regenerateMessage: (messageId: number, sessionId?: number) => Promise<{ assistantMessage: { id: number; content: string; role: string; created_at: string } | null; error: string | null }>
+  exportFullPackage: () => Promise<{ success: boolean; path?: string; error?: string }>
+  runTestSuite: () => Promise<{ total: number; passed: number; failed: number; results: Array<{ id: string; passed: boolean; score: number }> }>
 }
 
 const api: AppApi = {
@@ -394,7 +396,11 @@ const api: AppApi = {
   getJobStatus: (jobId) =>
     ipcRenderer.invoke('jobs:getStatus', jobId),
   regenerateMessage: (messageId, sessionId) =>
-    ipcRenderer.invoke('chat:regenerateMessage', { messageId, sessionId })
+    ipcRenderer.invoke('chat:regenerateMessage', { messageId, sessionId }),
+  exportFullPackage: () =>
+    ipcRenderer.invoke('backup:exportFull'),
+  runTestSuite: () =>
+    ipcRenderer.invoke('testing:runSuite')
 }
 
 contextBridge.exposeInMainWorld('appApi', api)

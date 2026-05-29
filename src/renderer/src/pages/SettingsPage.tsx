@@ -30,6 +30,9 @@ export default function SettingsPage() {
   const [aiConfig, setAiConfig] = useState<AIConfig>({ apiKey: '', baseUrl: '', model: '' })
   const [aiSaved, setAiSaved] = useState(false)
 
+  const [studyDayBoundary, setStudyDayBoundary] = useState(4)
+  const [boundarySaved, setBoundarySaved] = useState(false)
+
   const [confirmDialog, setConfirmDialog] = useState<{
     visible: boolean
     title: string
@@ -43,12 +46,13 @@ export default function SettingsPage() {
 
   const loadData = async () => {
     try {
-      const [config, backupList, apiKey, baseUrl, model] = await Promise.all([
+      const [config, backupList, apiKey, baseUrl, model, boundary] = await Promise.all([
         window.appApi.getBackupConfig(),
         window.appApi.listBackups(),
         window.appApi.getSetting('ai.api_key'),
         window.appApi.getSetting('ai.base_url'),
-        window.appApi.getSetting('ai.model')
+        window.appApi.getSetting('ai.model'),
+        window.appApi.getSetting('study_day_boundary_hour')
       ])
       setBackupConfig(config)
       setBackups(backupList)
@@ -57,6 +61,7 @@ export default function SettingsPage() {
         baseUrl: baseUrl || 'https://987xyz.com/v1',
         model: model || 'gpt-5.5'
       })
+      setStudyDayBoundary(boundary ? Number(boundary) : 4)
       setError(null)
     } catch (err) {
       console.error('Failed to load settings:', err)
@@ -76,6 +81,17 @@ export default function SettingsPage() {
     } catch (err) {
       console.error('Failed to save AI config:', err)
       setError('保存 AI 配置失败')
+    }
+  }
+
+  const handleSaveBoundary = async () => {
+    try {
+      await window.appApi.updateSetting('study_day_boundary_hour', String(studyDayBoundary))
+      setBoundarySaved(true)
+      setTimeout(() => setBoundarySaved(false), 2000)
+    } catch (err) {
+      console.error('Failed to save study day boundary:', err)
+      setError('保存学习日边界失败')
     }
   }
 
@@ -172,6 +188,30 @@ export default function SettingsPage() {
     })
   }
 
+  const handleExportData = async () => {
+    try {
+      const result = await window.appApi.exportFullPackage()
+      if (result.success) {
+        alert(`导出成功：${result.path}`)
+      } else {
+        setError(result.error || '导出失败')
+      }
+    } catch (err) {
+      console.error('Failed to export data:', err)
+      setError('导出数据失败')
+    }
+  }
+
+  const handleRunTests = async () => {
+    try {
+      const result = await window.appApi.runTestSuite()
+      alert(`测试完成：${result.passed}/${result.total} 通过`)
+    } catch (err) {
+      console.error('Failed to run tests:', err)
+      setError('运行测试失败')
+    }
+  }
+
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -251,6 +291,37 @@ export default function SettingsPage() {
                 保存 AI 配置
               </button>
               {aiSaved && <span className="save-success">已保存</span>}
+            </div>
+          </div>
+        </section>
+
+        {/* Study Day Boundary */}
+        <section className="settings-section">
+          <h3>学习日设置</h3>
+          <div className="settings-form">
+            <div className="settings-row">
+              <label>
+                <span>学习日边界时间</span>
+                <select
+                  value={studyDayBoundary}
+                  onChange={(e) => setStudyDayBoundary(Number(e.target.value))}
+                >
+                  <option value={0}>凌晨 0 点（自然日）</option>
+                  <option value={3}>凌晨 3 点</option>
+                  <option value={4}>凌晨 4 点（默认）</option>
+                  <option value={5}>凌晨 5 点</option>
+                  <option value={6}>凌晨 6 点</option>
+                </select>
+              </label>
+            </div>
+            <div className="settings-hint">
+              设置学习日的分界时间。例如选择凌晨 4 点，则凌晨 3:59 之前的学习算作前一天。
+            </div>
+            <div className="settings-row">
+              <button className="primary-button" onClick={handleSaveBoundary}>
+                保存学习日设置
+              </button>
+              {boundarySaved && <span className="save-success">已保存</span>}
             </div>
           </div>
         </section>
@@ -347,6 +418,36 @@ export default function SettingsPage() {
           ) : (
             <div className="stat-empty">暂无备份</div>
           )}
+        </section>
+
+        {/* Data Export */}
+        <section className="settings-section">
+          <h3>数据导出</h3>
+          <div className="settings-form">
+            <div className="settings-row">
+              <button className="primary-button" onClick={handleExportData}>
+                导出完整数据包
+              </button>
+            </div>
+            <div className="settings-hint">
+              导出数据库和设置为 ZIP 文件，可用于换电脑或备份。
+            </div>
+          </div>
+        </section>
+
+        {/* Test Runner */}
+        <section className="settings-section">
+          <h3>测试评估</h3>
+          <div className="settings-form">
+            <div className="settings-row">
+              <button className="primary-button" onClick={handleRunTests}>
+                运行测试集
+              </button>
+            </div>
+            <div className="settings-hint">
+              运行预设测试用例评估 AI 回复质量。
+            </div>
+          </div>
         </section>
       </div>
 

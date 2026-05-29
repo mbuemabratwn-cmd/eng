@@ -136,6 +136,43 @@ export class SummaryModule {
     return this.summaryRepo.getRecentWeeklyReviews(limit)
   }
 
+  getWeekStart(date?: Date): string {
+    const d = date || new Date()
+    const day = d.getDay()
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1)
+    const weekStart = new Date(d.setDate(diff))
+    return weekStart.toISOString().split('T')[0]
+  }
+
+  getWeekEnd(weekStart: string): string {
+    const start = new Date(weekStart)
+    start.setDate(start.getDate() + 6)
+    return start.toISOString().split('T')[0]
+  }
+
+  hasWeeklyReviewForWeek(weekStart: string): boolean {
+    const existing = this.summaryRepo.getWeeklyReview(weekStart)
+    return existing !== null
+  }
+
+  createAutoWeeklyReview(): WeeklyReview | null {
+    const weekStart = this.getWeekStart()
+    if (this.hasWeeklyReviewForWeek(weekStart)) {
+      return null
+    }
+
+    const weekEnd = this.getWeekEnd(weekStart)
+    const dailySummaries = this.summaryRepo.getRecentDailySummaries(7)
+
+    return this.createWeeklyReview({
+      weekStart,
+      weekEnd,
+      summary: `本周学习总结：共学习 ${dailySummaries.length} 天。`,
+      strengths: ['保持了学习连续性'],
+      recommendations: ['继续保持学习节奏']
+    })
+  }
+
   createBlockSummary(input: CreateBlockSummaryInput): BlockSummary {
     return this.summaryRepo.createBlockSummary({
       block_id: input.blockId,

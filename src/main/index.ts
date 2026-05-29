@@ -991,6 +991,26 @@ function registerIPC() {
     return backupService.getConfig()
   })
 
+  ipcMain.handle('backup:exportFull', async () => {
+    return backupService.exportFullPackage()
+  })
+
+  ipcMain.handle('testing:runSuite', async () => {
+    const { TestRunner } = await import('./testing/test-runner')
+    const runner = new TestRunner(aiProvider)
+    const report = await runner.runAll()
+    return {
+      total: report.totalTests,
+      passed: report.passedTests,
+      failed: report.failedTests,
+      results: report.results.map(r => ({
+        id: r.testCaseId,
+        passed: r.passed,
+        score: r.score
+      }))
+    }
+  })
+
   // Database health service IPC handlers
   ipcMain.handle('health:checkIntegrity', async () => {
     return healthService.checkIntegrity()
@@ -1008,7 +1028,8 @@ function registerIPC() {
     const result = await dialog.showOpenDialog({
       properties: ['openFile'],
       filters: [
-        { name: '文本文件', extensions: ['txt', 'md', 'csv', 'json', 'xml', 'html'] },
+        { name: '文本文件', extensions: ['txt', 'md', 'csv'] },
+        { name: '文档文件', extensions: ['pdf', 'docx'] },
         { name: '所有文件', extensions: ['*'] }
       ]
     })
