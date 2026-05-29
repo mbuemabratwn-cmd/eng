@@ -31,6 +31,32 @@ export default [
     }
   },
   {
+    files: ['src/main/**/__tests__/**/*.ts', 'src/main/**/*.test.ts'],
+    languageOptions: {
+      parser: tsparser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module'
+      },
+      globals: {
+        ...globals.node,
+        ...globals.es2021,
+        ...globals.jest,
+        NodeJS: 'readonly'
+      }
+    },
+    plugins: {
+      '@typescript-eslint': tseslint
+    },
+    rules: {
+      ...tseslint.configs.recommended.rules,
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-require-imports': 'off',
+      'no-console': 'warn'
+    }
+  },
+  {
     files: ['src/renderer/**/*.ts', 'src/renderer/**/*.tsx'],
     languageOptions: {
       parser: tsparser,

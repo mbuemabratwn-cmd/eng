@@ -343,12 +343,15 @@
   - 从 `prompt_versions` 表读取激活版本
 - [x] 3.3.3 初始化默认 prompt 版本
   - 首次启动时写入当前硬编码 prompt
-- [ ] 3.3.4 在 AI 日志中关联 prompt 版本 ID
+- [x] 3.3.4 在 AI 日志中关联 prompt 版本 ID
+  - PromptBuilder 返回 PromptBuildResult 包含 promptVersions
+  - AIOrchestrator 将版本 ID 传递给 AILogger
+  - AILogger 的 global_prompt_version 和 mode_prompt_version 字段已填充
 
 **验证**：
-- [ ] 首次启动后 `prompt_versions` 有默认记录
-- [ ] 修改 prompt 创建新版本 → AI 使用新版本
-- [ ] 切换回旧版本 → AI 回复风格变化
+- [x] 首次启动后 `prompt_versions` 有默认记录
+- [x] 修改 prompt 创建新版本 → AI 使用新版本
+- [x] 切换回旧版本 → AI 回复风格变化
 
 **涉及文件**：
 - `src/main/services/prompt-version-manager.ts`（新建）
@@ -526,9 +529,16 @@
 
 **实施步骤**：
 
-- [ ] 5.2.1 流式 AI 回复
-  - 后端：AIOrchestrator 支持 streaming IPC
-  - 前端：MessageList 逐 token 渲染，打字机效果
+- [x] 5.2.1 流式 AI 回复
+  - 后端：AIOrchestrator 支持 streaming IPC ✓
+  - 前端：MessageList 逐 token 渲染，打字机效果 ✓
+  - AIProvider 接口新增 chatStream 方法 ✓
+  - OpenAIProvider 实现 SSE 流式解析 ✓
+  - MockAIProvider 实现字符级流式模拟 ✓
+  - IPC 层：chat:stream / chat:stream:chunk / chat:stream:complete / chat:stream:error ✓
+  - Preload 新增 streamMessage / onStreamChunk / onStreamComplete / onStreamError ✓
+  - ChatPage 使用流式发送，实时更新 streamingContent ✓
+  - MessageList 显示流式内容 + 闪烁光标 ✓
 - [x] 5.2.2 AI 重试按钮
   - MessageList 中错误消息显示重试按钮
   - 调用 `chat:regenerateMessage`
@@ -546,7 +556,7 @@
   - 点击展开 ✓
 
 **验证**：
-- [ ] AI 回复逐 token 显示
+- [x] AI 回复逐 token 显示
 - [x] AI 失败 → 重试按钮可用
 - [ ] 选择文件 + 输入文字 → 一起发送
 - [x] 学习时间实时更新
@@ -600,10 +610,12 @@
   - 展示完整词汇信息 ✓
 - [x] 5.4.2 创建 TeachingFormatBadge 组件
   - 显示当前教学形式（故事/讨论/知识/短文/对比）✓
-- [ ] 5.4.3 在 LearningStatusBar 显示教学形式
+- [x] 5.4.3 在 LearningStatusBar 显示教学形式
+  - 根据 currentTask 映射到教学形式 ✓
+  - 活跃学习时显示 TeachingFormatBadge ✓
 
 **验证**：
-- [ ] 词汇主题课 → 显示当前教学形式标签
+- [x] 词汇主题课 → 显示当前教学形式标签
 - [x] 词汇详情卡片显示完整信息
 
 **涉及文件**：
@@ -712,8 +724,9 @@
 ## 最终验证清单
 
 - [x] `npm run typecheck` 通过
-- [!] `npm run lint` 通过（ESLint v9 配置格式不兼容）
+- [x] `npm run lint` 通过（0 errors, 55 warnings）
 - [x] `npm run build` 通过
+- [x] `npm test` 通过（23 tests, 2 suites）
 - [x] 所有 15 个实施步骤功能完成
 - [x] 所有前端 UI 改造完成
 - [x] 设计文档所有验收标准满足

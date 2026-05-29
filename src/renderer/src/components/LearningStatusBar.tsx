@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import TeachingFormatBadge from './TeachingFormatBadge'
 
 interface LearningState {
   currentSessionId: number | null
@@ -6,7 +7,7 @@ interface LearningState {
   currentTask: string
   teacherMode: string
   activeBlockId: number | null
-  activeTask: { task_type: string; status: string } | null
+  activeTask: { task_type: string; status: string; theme?: string } | null
   persistencePolicy: string
 }
 
@@ -31,6 +32,15 @@ const MODE_LABELS: Record<string, string> = {
   chat: '对话'
 }
 
+// Map task types to teaching formats
+const TASK_TEACHING_FORMAT: Record<string, string> = {
+  word_theme_learning: '知识分享',
+  word_review: '讨论',
+  long_sentence: '考研短文',
+  grammar_correction: '易混词对比',
+  free_chat: '故事'
+}
+
 export default function LearningStatusBar() {
   const [state, setState] = useState<LearningState | null>(null)
 
@@ -49,6 +59,7 @@ export default function LearningStatusBar() {
   const isActive = state.activeBlockId !== null
   const taskLabel = TASK_LABELS[state.currentTask] || state.currentTask
   const modeLabel = MODE_LABELS[state.teacherMode] || state.teacherMode
+  const teachingFormat = TASK_TEACHING_FORMAT[state.currentTask]
 
   return (
     <div className="learning-status-bar">
@@ -56,6 +67,9 @@ export default function LearningStatusBar() {
       <span className="status-text">
         {isActive ? `${taskLabel} · ${modeLabel}` : '未在学习'}
       </span>
+      {isActive && teachingFormat && (
+        <TeachingFormatBadge format={teachingFormat} />
+      )}
       {state.persistencePolicy === 'transient_only' && (
         <span className="status-badge status-transient">临时</span>
       )}

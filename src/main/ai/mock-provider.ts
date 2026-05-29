@@ -1,4 +1,4 @@
-import { AIProvider, AIRequest, AIResponse } from './provider'
+import { AIProvider, AIRequest, AIResponse, AIStreamChunk } from './provider'
 
 const RESPONSES = [
   "这是个好问题。让我帮你理解一下。",
@@ -39,5 +39,17 @@ export class MockAIProvider implements AIProvider {
         outputTokens: response.length
       }
     }
+  }
+
+  async *chatStream(request: AIRequest): AsyncIterable<AIStreamChunk> {
+    const response = await this.chat(request)
+    const words = response.content.split('')
+
+    for (const char of words) {
+      yield { content: char, done: false }
+      await new Promise(resolve => setTimeout(resolve, 20))
+    }
+
+    yield { content: '', done: true }
   }
 }

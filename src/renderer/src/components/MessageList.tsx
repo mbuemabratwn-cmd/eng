@@ -15,11 +15,12 @@ interface MessageListProps {
   hasMore?: boolean
   loadingMore?: boolean
   onLoadMore?: () => void
+  streamingContent?: string
 }
 
 const FOLD_THRESHOLD = 500 // Characters before folding
 
-export default function MessageList({ messages, loading, onRetry, hasMore, loadingMore, onLoadMore }: MessageListProps) {
+export default function MessageList({ messages, loading, onRetry, hasMore, loadingMore, onLoadMore, streamingContent }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const [expandedMessages, setExpandedMessages] = useState<Set<number>>(new Set())
 
@@ -104,9 +105,16 @@ export default function MessageList({ messages, loading, onRetry, hasMore, loadi
         <div className="message message-assistant">
           <div className="message-avatar">AI</div>
           <div className="message-bubble">
-            <div className="typing-indicator">
-              <span /><span /><span />
-            </div>
+            {streamingContent ? (
+              <div className="message-markdown streaming">
+                <Markdown>{streamingContent}</Markdown>
+                <span className="streaming-cursor">▊</span>
+              </div>
+            ) : (
+              <div className="typing-indicator">
+                <span /><span /><span />
+              </div>
+            )}
           </div>
         </div>
       )}

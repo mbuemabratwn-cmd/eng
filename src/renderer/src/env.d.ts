@@ -10,6 +10,10 @@ interface AppApi {
     confirmationMessage?: string
     pendingIntent?: string
   }>
+  streamMessage: (content: string, sessionId?: number) => void
+  onStreamChunk: (callback: (chunk: { content: string; done: boolean }) => void) => () => void
+  onStreamComplete: (callback: (result: { userMessage: { id: number; content: string; role: string; created_at: string }; assistantMessage: { id: number; content: string; role: string; created_at: string }; sessionId: number }) => void) => () => void
+  onStreamError: (callback: (result: { error: string }) => void) => () => void
   getMessages: (sessionId: number, limit?: number, offset?: number) => Promise<Array<{
     id: number
     session_id: number

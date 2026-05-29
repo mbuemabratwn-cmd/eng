@@ -88,6 +88,15 @@ JSON 是给系统记录用的，不要在对话中展示或解释它。`,
   daily_plan: `当前任务：今日计划。简短说明今天为什么这样安排（结合复习压力和新词量），不要展示复杂后台数据。给出自然的学习顺序，让用户可以直接开始。如果用户说时间有限，调整计划。`
 }
 
+export interface PromptBuildResult {
+  messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>
+  promptVersions: {
+    globalVersionId?: number
+    modeVersionId?: number
+    taskVersionId?: number
+  }
+}
+
 export class PromptBuilder {
   private promptVersionManager: PromptVersionManager | null = null
 
@@ -95,11 +104,14 @@ export class PromptBuilder {
     this.promptVersionManager = promptVersionManager || null
   }
 
-  build(input: PromptBuildInput): Array<{ role: 'system' | 'user' | 'assistant'; content: string }> {
+  build(input: PromptBuildInput): PromptBuildResult {
     const modules: PromptModule[] = []
+    const promptVersions: PromptBuildResult['promptVersions'] = {}
 
     // Global system prompt
-    const globalPrompt = this.promptVersionManager?.getActiveVersion('global_system')?.content || GLOBAL_SYSTEM_PROMPT
+    const globalVersion = this.promptVersionManager?.getActiveVersion('global_system')
+    const globalPrompt = globalVersion?.content || GLOBAL_SYSTEM_PROMPT
+    if (globalVersion) promptVersions.globalVersionId = globalVersion.id
     modules.push({
       role: 'system',
       content: globalPrompt,
@@ -108,8 +120,10 @@ export class PromptBuilder {
 
     // Mode prompt
     const modePromptKey = `mode_${input.state.teacher_mode}`
-    const modePrompt = this.promptVersionManager?.getActiveVersion(modePromptKey)?.content ||
+    const modeVersion = this.promptVersionManager?.getActiveVersion(modePromptKey)
+    const modePrompt = modeVersion?.content ||
       MODE_PROMPTS[input.state.teacher_mode] || MODE_PROMPTS.chat
+    if (modeVersion) promptVersions.modeVersionId = modeVersion.id
     modules.push({
       role: 'system',
       content: modePrompt,
@@ -117,8 +131,10 @@ export class PromptBuilder {
     })
 
     const taskPromptKey = `task_${input.state.current_learning_task}`
-    const taskPrompt = this.promptVersionManager?.getActiveVersion(taskPromptKey)?.content ||
+    const taskVersion = this.promptVersionManager?.getActiveVersion(taskPromptKey)
+    const taskPrompt = taskVersion?.content ||
       TASK_PROMPTS[input.state.current_learning_task]
+    if (taskVersion) promptVersions.taskVersionId = taskVersion.id
     if (taskPrompt) {
       modules.push({
         role: 'system',
@@ -207,7 +223,7 @@ export class PromptBuilder {
 
     messages.push({ role: 'user', content: input.userMessage })
 
-    return messages
+    return { messages, promptVersions }
   }
 
   private buildStudentState(state: LearningState): string {

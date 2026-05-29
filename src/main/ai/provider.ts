@@ -13,8 +13,14 @@ export interface AIResponse {
   }
 }
 
+export interface AIStreamChunk {
+  content: string
+  done: boolean
+}
+
 export interface AIProvider {
   name: string
   chat(request: AIRequest): Promise<AIResponse>
+  chatStream(request: AIRequest): AsyncIterable<AIStreamChunk>
   abort(): void
 }

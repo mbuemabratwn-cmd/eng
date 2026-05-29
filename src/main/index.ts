@@ -468,6 +468,62 @@ function registerIPC() {
     return { success: true }
   })
 
+  // Streaming chat handler
+  ipcMain.on('chat:stream', async (event, payload: { content: string; sessionId?: number }) => {
+    const sessionId = payload.sessionId || currentSessionId
+    if (!sessionId) {
+      const session = chatRepo.createSession('新对话', 'free_chat')
+      currentSessionId = session.id
+    }
+    const sid = sessionId || currentSessionId!
+
+    // Save user message first
+    const userMessage = chatRepo.saveMessage(sid, 'user', payload.content)
+    stateManager.setActiveSession(sid)
+
+    // Ensure active block
+    const studyDay = stateManager.getState().study_day
+    let activeBlock = blockRepo.getActiveBlock(studyDay)
+    if (!activeBlock) {
+      activeBlock = blockRepo.create(studyDay, sid)
+      stateManager.setActiveBlock(activeBlock.id)
+    }
+
+    let fullContent = ''
+    try {
+      for await (const chunk of orchestrator.processMessageStream({
+        userMessage: payload.content,
+        sessionId: sid
+      })) {
+        fullContent += chunk.content
+        event.sender.send('chat:stream:chunk', {
+          content: chunk.content,
+          done: chunk.done
+        })
+      }
+
+      // Save the complete assistant message
+      const assistantMessage = chatRepo.saveMessage(sid, 'assistant', fullContent)
+      event.sender.send('chat:stream:complete', {
+        userMessage,
+        assistantMessage,
+        sessionId: sid,
+        learningState: getLearningStateSnapshot(),
+        lessonState: themeLesson.getLessonState()
+      })
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      // Save error message
+      const errorMsg = chatRepo.saveMessage(sid, 'assistant', `[错误] ${errorMessage}`)
+      event.sender.send('chat:stream:error', {
+        userMessage,
+        assistantMessage: errorMsg,
+        sessionId: sid,
+        error: errorMessage
+      })
+    }
+  })
+
   ipcMain.handle('chat:regenerateMessage', async (_event, payload: { messageId: number; sessionId?: number }) => {
     const sessionId = payload.sessionId || currentSessionId
     if (!sessionId) throw new Error('No active session')
@@ -1101,7 +1157,7 @@ app.whenReady().then(async () => {
   memoryEngine = new MemoryEngine(summaryRepo)
 
   const actionDispatcher = new ActionDispatcher(vocabEngine, sentenceEngine, grammarEngine, memoryEngine, eventRepo, themeLesson)
-  orchestrator = new AIOrchestrator(aiProvider, chatRepo, stateManager, intentRouter, summaryRepo, actionDispatcher, themeLesson)
+  orchestrator = new AIOrchestrator(aiProvider, chatRepo, stateManager, intentRouter, summaryRepo, actionDispatcher, themeLesson, aiLogger)
 
   const jobRepo = new JobRepository(db)
   jobQueue = new JobQueue(jobRepo)

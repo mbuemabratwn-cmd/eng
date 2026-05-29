@@ -11,6 +11,7 @@ import { ActionValidator, ValidationResult } from './action-validator'
 import { ActionDispatcher, DispatchResult } from './action-dispatcher'
 import { VocabularyThemeLesson } from './vocabulary-theme-lesson'
 import { OutputLinter } from './output-linter'
+import { AILogger } from './ai-logger'
 
 export interface OrchestratorInput {
   userMessage: string
@@ -44,7 +45,8 @@ export class AIOrchestrator {
     private intentRouter: IntentRouter,
     private summaryRepo: SummaryRepository,
     private actionDispatcher: ActionDispatcher,
-    private themeLesson?: VocabularyThemeLesson
+    private themeLesson?: VocabularyThemeLesson,
+    private aiLogger?: AILogger
   ) {
     this.promptBuilder = new PromptBuilder()
     this.contextRetriever = new ContextRetriever(chatRepo, summaryRepo)
@@ -56,6 +58,89 @@ export class AIOrchestrator {
 
   abort(): void {
     this.aiProvider.abort()
+  }
+
+  async *processMessageStream(input: OrchestratorInput): AsyncIterable<{ content: string; done: boolean }> {
+    const state = this.stateManager.getState()
+
+    // Clear break reminder if user says "继续"
+    if (input.userMessage.includes('继续') && this.stateManager.isBreakReminderPending()) {
+      this.stateManager.clearBreakReminder()
+    }
+
+    // 1. Classify intent
+    const intentResult = this.intentRouter.classify(input.userMessage)
+
+    // 2. Retrieve context
+    const rawContext = this.contextRetriever.retrieve({
+      sessionId: input.sessionId,
+      state
+    })
+
+    // 2.5. Trim context to budget
+    const context = this.contextBudgetManager.trim({
+      recentMessages: rawContext.recentMessages,
+      memorySummary: rawContext.memorySummary,
+      dailySummary: rawContext.dailySummary,
+      weeklyReview: rawContext.weeklyReview,
+      taskContext: rawContext.taskContext,
+      modePrompt: '',
+      globalSystemPrompt: '',
+      userInput: input.userMessage
+    })
+
+    // 3. Build prompt
+    const promptResult = this.promptBuilder.build({
+      userMessage: input.userMessage,
+      state,
+      recentMessages: context.recentMessages,
+      memorySummary: context.memorySummary || undefined,
+      retrievedContext: context.taskContext || undefined,
+      lessonContext: this.themeLesson?.getPromptContext() || null,
+      breakReminder: context.breakReminder,
+      blockDurationMinutes: context.blockDurationMinutes
+    })
+
+    // 4. Stream AI response
+    const aiRequest: AIRequest = { messages: promptResult.messages }
+    const startTime = Date.now()
+    let fullContent = ''
+
+    try {
+      for await (const chunk of this.aiProvider.chatStream(aiRequest)) {
+        fullContent += chunk.content
+        yield chunk
+      }
+
+      // 5. Log success
+      this.aiLogger?.log({
+        provider: this.aiProvider.name,
+        prompt_type: state.current_learning_task,
+        global_prompt_version: promptResult.promptVersions.globalVersionId?.toString(),
+        mode_prompt_version: promptResult.promptVersions.modeVersionId?.toString(),
+        latency_ms: Date.now() - startTime,
+        status: 'success',
+        related_session_id: input.sessionId,
+        related_block_id: state.active_learning_block_id || undefined
+      })
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
+
+      // Log failure
+      this.aiLogger?.log({
+        provider: this.aiProvider.name,
+        prompt_type: state.current_learning_task,
+        global_prompt_version: promptResult.promptVersions.globalVersionId?.toString(),
+        mode_prompt_version: promptResult.promptVersions.modeVersionId?.toString(),
+        latency_ms: Date.now() - startTime,
+        status: 'error',
+        error_message: errorMessage,
+        related_session_id: input.sessionId,
+        related_block_id: state.active_learning_block_id || undefined
+      })
+
+      throw err
+    }
   }
 
   async processMessage(input: OrchestratorInput): Promise<OrchestratorResult> {
@@ -88,19 +173,20 @@ export class AIOrchestrator {
     })
 
     // 3. Build prompt
-      const messages = this.promptBuilder.build({
-        userMessage: input.userMessage,
-        state,
-        recentMessages: context.recentMessages,
-        memorySummary: context.memorySummary || undefined,
-        retrievedContext: context.taskContext || undefined,
-        lessonContext: this.themeLesson?.getPromptContext() || null,
-        breakReminder: context.breakReminder,
-        blockDurationMinutes: context.blockDurationMinutes
-      })
+    const promptResult = this.promptBuilder.build({
+      userMessage: input.userMessage,
+      state,
+      recentMessages: context.recentMessages,
+      memorySummary: context.memorySummary || undefined,
+      retrievedContext: context.taskContext || undefined,
+      lessonContext: this.themeLesson?.getPromptContext() || null,
+      breakReminder: context.breakReminder,
+      blockDurationMinutes: context.blockDurationMinutes
+    })
 
     // 4. Call AI provider
-    const aiRequest: AIRequest = { messages }
+    const aiRequest: AIRequest = { messages: promptResult.messages }
+    const startTime = Date.now()
 
     try {
       const aiResponse = await this.aiProvider.chat(aiRequest)
@@ -143,6 +229,21 @@ export class AIOrchestrator {
         parseResult.reply
       )
 
+      // 7.5. Log AI request success
+      this.aiLogger?.log({
+        provider: this.aiProvider.name,
+        prompt_type: state.current_learning_task,
+        global_prompt_version: promptResult.promptVersions.globalVersionId?.toString(),
+        mode_prompt_version: promptResult.promptVersions.modeVersionId?.toString(),
+        input_tokens_estimate: aiResponse.usage?.inputTokens,
+        output_tokens_estimate: aiResponse.usage?.outputTokens,
+        latency_ms: Date.now() - startTime,
+        status: 'success',
+        related_session_id: input.sessionId,
+        related_block_id: state.active_learning_block_id || undefined,
+        related_message_id: assistantMessage?.id
+      })
+
       // 8. Transition state if needed
       if (parseResult.payload?.teacher_mode) {
         const nextMode = parseResult.payload.teacher_mode
@@ -166,6 +267,20 @@ export class AIOrchestrator {
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err)
+
+      // Log AI request failure
+      this.aiLogger?.log({
+        provider: this.aiProvider.name,
+        prompt_type: state.current_learning_task,
+        global_prompt_version: promptResult.promptVersions.globalVersionId?.toString(),
+        mode_prompt_version: promptResult.promptVersions.modeVersionId?.toString(),
+        latency_ms: Date.now() - startTime,
+        status: 'error',
+        error_message: errorMessage,
+        related_session_id: input.sessionId,
+        related_block_id: state.active_learning_block_id || undefined
+      })
+
       return {
         userMessage: { id: 0, content: input.userMessage, role: 'user', created_at: '' },
         assistantMessage: null,

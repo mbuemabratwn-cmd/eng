@@ -13,7 +13,9 @@
     "typecheck:renderer": "tsc -p tsconfig.web.json --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
     "start": "electron-vite preview",
-    "package": "electron-vite build && electron-builder build --config"
+    "package": "electron-vite build && electron-builder build --config",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "build": {
     "appId": "com.ai-english-learning.app",
@@ -48,6 +50,7 @@
     "@eslint/eslintrc": "^3.3.5",
     "@types/archiver": "^7.0.0",
     "@types/better-sqlite3": "^7.6.12",
+    "@types/jest": "^30.0.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@typescript-eslint/eslint-plugin": "^8.60.0",
@@ -58,6 +61,8 @@
     "electron-vite": "^2.3.0",
     "eslint": "^9.14.0",
     "globals": "^17.6.0",
+    "jest": "^30.4.2",
+    "ts-jest": "^29.4.11",
     "typescript": "^5.6.3",
     "vite": "^5.4.11"
   }

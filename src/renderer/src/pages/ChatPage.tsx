@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import MessageList from '../components/MessageList'
 import MessageInput from '../components/MessageInput'
 import LearningStatusBar from '../components/LearningStatusBar'
@@ -24,6 +24,8 @@ export default function ChatPage({ sessionId: externalSessionId, onSettingsClick
   const [pendingConfirmation, setPendingConfirmation] = useState<{ intent: string; message: string } | null>(null)
   const [hasMore, setHasMore] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [streamingContent, setStreamingContent] = useState<string>('')
+  const streamingCleanupRef = useRef<(() => void) | null>(null)
 
   const PAGE_SIZE = 50
 
@@ -79,6 +81,11 @@ export default function ChatPage({ sessionId: externalSessionId, onSettingsClick
     // If currently loading, abort the current request
     if (loading) {
       await window.appApi.abortCurrentRequest()
+      // Cleanup streaming listeners
+      if (streamingCleanupRef.current) {
+        streamingCleanupRef.current()
+        streamingCleanupRef.current = null
+      }
       // Mark the last assistant message as cancelled if it exists
       setMessages(prev => {
         const lastMsg = prev[prev.length - 1]
@@ -87,6 +94,9 @@ export default function ChatPage({ sessionId: externalSessionId, onSettingsClick
         }
         return prev
       })
+      setStreamingContent('')
+      setLoading(false)
+      return
     }
 
     // Show user message immediately
@@ -98,36 +108,32 @@ export default function ChatPage({ sessionId: externalSessionId, onSettingsClick
     }
     setMessages(prev => [...prev, tempUserMsg])
     setLoading(true)
+    setStreamingContent('')
 
+    // Use streaming for regular messages
     try {
-      const result = await window.appApi.sendMessage(content, sessionId || undefined)
-      setSessionId(result.sessionId)
-
-      // Replace temp user message with real one
-      setMessages(prev => {
-        const withoutTemp = prev.filter(m => m.id !== tempUserMsg.id)
-        return [...withoutTemp, result.userMessage]
+      // Set up streaming listeners
+      const cleanupChunk = window.appApi.onStreamChunk((chunk) => {
+        setStreamingContent(prev => prev + chunk.content)
       })
 
-      // Check if action requires confirmation
-      if (result.requiresConfirmation) {
-        setPendingConfirmation({
-          intent: result.pendingIntent || 'unknown',
-          message: result.confirmationMessage || '此操作需要确认。'
+      const cleanupComplete = window.appApi.onStreamComplete((result) => {
+        // Replace temp user message with real one
+        setMessages(prev => {
+          const withoutTemp = prev.filter(m => m.id !== tempUserMsg.id)
+          return [...withoutTemp, result.userMessage, result.assistantMessage]
         })
-        setMessages(prev => [...prev, {
-          id: -2,
-          role: 'assistant',
-          content: result.confirmationMessage || '此操作需要确认。输入"确认"继续，或输入"取消"中止。',
-          created_at: new Date().toISOString()
-        }])
-        return
-      }
+        setSessionId(result.sessionId)
+        setStreamingContent('')
+        setLoading(false)
+        // Cleanup listeners
+        if (streamingCleanupRef.current) {
+          streamingCleanupRef.current()
+          streamingCleanupRef.current = null
+        }
+      })
 
-      // Show assistant message
-      if (result.assistantMessage) {
-        setMessages(prev => [...prev, result.assistantMessage!])
-      } else if (result.error) {
+      const cleanupError = window.appApi.onStreamError((result) => {
         setMessages(prev => [...prev, {
           id: -1,
           role: 'assistant',
@@ -135,11 +141,27 @@ export default function ChatPage({ sessionId: externalSessionId, onSettingsClick
           created_at: new Date().toISOString()
         }])
         setError(result.error)
+        setStreamingContent('')
+        setLoading(false)
+        // Cleanup listeners
+        if (streamingCleanupRef.current) {
+          streamingCleanupRef.current()
+          streamingCleanupRef.current = null
+        }
+      })
+
+      // Store cleanup function
+      streamingCleanupRef.current = () => {
+        cleanupChunk()
+        cleanupComplete()
+        cleanupError()
       }
+
+      // Start streaming
+      window.appApi.streamMessage(content, sessionId || undefined)
     } catch (err) {
       console.error('Failed to send message:', err)
       setError('发送消息失败')
-    } finally {
       setLoading(false)
     }
   }
@@ -315,6 +337,7 @@ export default function ChatPage({ sessionId: externalSessionId, onSettingsClick
         hasMore={hasMore}
         loadingMore={loadingMore}
         onLoadMore={loadMoreMessages}
+        streamingContent={streamingContent}
       />
       {pendingConfirmation ? (
         <div className="confirmation-bar">
