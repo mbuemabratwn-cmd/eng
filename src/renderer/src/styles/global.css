@@ -1579,3 +1579,41 @@ input, textarea {
 .message-markdown.streaming {
   position: relative;
 }
+
+/* Pending file bar */
+.pending-file-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #f0f7ff;
+  border: 1px solid #d0e3f7;
+  border-radius: 6px 6px 0 0;
+  font-size: 13px;
+}
+
+.pending-file-icon {
+  font-size: 14px;
+}
+
+.pending-file-name {
+  flex: 1;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pending-file-remove {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #999;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.pending-file-remove:hover {
+  color: #e74c3c;
+}

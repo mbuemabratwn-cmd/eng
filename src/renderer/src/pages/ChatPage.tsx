@@ -69,12 +69,18 @@ export default function ChatPage({ sessionId: externalSessionId, onSettingsClick
     init()
   }, [loadMessages, externalSessionId])
 
-  const handleSend = async (content: string) => {
+  const handleSend = async (content: string, filePath?: string) => {
     setError(null)
 
     // Handle /settings command locally
     if (content === '/settings' && onSettingsClick) {
       onSettingsClick()
+      return
+    }
+
+    // Handle file upload with message
+    if (filePath) {
+      await handleFileWithMessage(content, filePath)
       return
     }
 
@@ -162,6 +168,72 @@ export default function ChatPage({ sessionId: externalSessionId, onSettingsClick
     } catch (err) {
       console.error('Failed to send message:', err)
       setError('发送消息失败')
+      setLoading(false)
+    }
+  }
+
+  const handleFileWithMessage = async (message: string, filePath: string) => {
+    setError(null)
+    setLoading(true)
+
+    try {
+      // Read file content via IPC
+      const { filename, content } = await window.appApi.readFileContent(filePath)
+
+      // Show user message with text and file indicator
+      const userMsg: Message = {
+        id: Date.now(),
+        role: 'user',
+        content: message.includes('[上传文件]') ? message : `${message}\n\n📎 ${filename}`,
+        created_at: new Date().toISOString()
+      }
+      setMessages(prev => [...prev, userMsg])
+
+      // Show "正在导入..." status
+      const statusMsgId = Date.now() + 1
+      setMessages(prev => [...prev, {
+        id: statusMsgId,
+        role: 'assistant',
+        content: `正在导入文件 "${filename}"...`,
+        created_at: new Date().toISOString()
+      }])
+
+      // Ingest file
+      const result = await window.appApi.ingestFile({
+        filename,
+        content,
+        filePath
+      })
+
+      if (result.skipped) {
+        setMessages(prev => prev.map(m =>
+          m.id === statusMsgId
+            ? { ...m, content: `文件 "${filename}" 已跳过: ${result.reason || '重复文件'}` }
+            : m
+        ))
+      } else {
+        const candidateCount = result.importCandidates.length
+        setMessages(prev => prev.map(m =>
+          m.id === statusMsgId
+            ? { ...m, content: `正在导入 "${filename}"：识别出 ${candidateCount} 个词汇，正在处理...` }
+            : m
+        ))
+
+        if (result.jobId) {
+          await pollJobUntilDone(result.jobId, statusMsgId, filename, candidateCount)
+        }
+      }
+    } catch (err) {
+      console.error('Failed to upload file:', err)
+      const errorMsg = err instanceof Error ? err.message : '文件上传失败'
+      setError(errorMsg)
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        role: 'assistant',
+        content: `[错误] ${errorMsg}`,
+        created_at: new Date().toISOString()
+      }])
+    } finally {
       setLoading(false)
     }
   }

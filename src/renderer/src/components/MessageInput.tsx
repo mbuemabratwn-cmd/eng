@@ -1,8 +1,13 @@
 import { useState, useRef, KeyboardEvent } from 'react'
 import SlashCommandMenu, { COMMANDS, CommandItem } from './SlashCommandMenu'
 
+interface PendingFile {
+  path: string
+  name: string
+}
+
 interface MessageInputProps {
-  onSend: (content: string) => void
+  onSend: (content: string, filePath?: string) => void
   onFileUpload?: (filePath: string) => void
   disabled?: boolean
 }
@@ -12,6 +17,7 @@ export default function MessageInput({ onSend, onFileUpload, disabled }: Message
   const [showCommands, setShowCommands] = useState(false)
   const [filteredCommands, setFilteredCommands] = useState<CommandItem[]>([])
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const [pendingFile, setPendingFile] = useState<PendingFile | null>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -35,8 +41,15 @@ export default function MessageInput({ onSend, onFileUpload, disabled }: Message
 
   const handleSend = () => {
     const trimmed = value.trim()
-    if (!trimmed || disabled) return
-    onSend(trimmed)
+    if ((!trimmed && !pendingFile) || disabled) return
+
+    if (pendingFile) {
+      // Send file with optional text message
+      onSend(trimmed || `[上传文件] ${pendingFile.name}`, pendingFile.path)
+      setPendingFile(null)
+    } else {
+      onSend(trimmed)
+    }
     setValue('')
     setShowCommands(false)
     inputRef.current?.focus()
@@ -81,9 +94,17 @@ export default function MessageInput({ onSend, onFileUpload, disabled }: Message
   const handleAttachClick = async () => {
     if (disabled) return
     const filePath = await window.appApi.selectFile()
-    if (filePath && onFileUpload) {
-      onFileUpload(filePath)
+    if (filePath) {
+      // Extract filename from path
+      const parts = filePath.split(/[/\\]/)
+      const filename = parts[parts.length - 1]
+      setPendingFile({ path: filePath, name: filename })
+      inputRef.current?.focus()
     }
+  }
+
+  const handleRemoveFile = () => {
+    setPendingFile(null)
   }
 
   return (
@@ -95,6 +116,15 @@ export default function MessageInput({ onSend, onFileUpload, disabled }: Message
         onSelect={handleSelectCommand}
         onHover={setSelectedIndex}
       />
+      {pendingFile && (
+        <div className="pending-file-bar">
+          <span className="pending-file-icon">📎</span>
+          <span className="pending-file-name">{pendingFile.name}</span>
+          <button className="pending-file-remove" onClick={handleRemoveFile} title="移除文件">
+            ×
+          </button>
+        </div>
+      )}
       <div className="message-input-container">
         <button
           className="attach-button"
@@ -110,14 +140,14 @@ export default function MessageInput({ onSend, onFileUpload, disabled }: Message
           value={value}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          placeholder="输入消息... (/ 打开命令菜单，回车发送)"
+          placeholder={pendingFile ? '添加说明文字（可选）...' : '输入消息... (/ 打开命令菜单，回车发送)'}
           disabled={disabled}
           rows={2}
         />
         <button
           className="send-button"
           onClick={handleSend}
-          disabled={!value.trim()}
+          disabled={!value.trim() && !pendingFile}
         >
           {disabled ? '中断' : '发送'}
         </button>
