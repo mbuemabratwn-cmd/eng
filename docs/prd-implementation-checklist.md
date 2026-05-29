@@ -738,7 +738,9 @@
 - [x] 所有前端 UI 改造完成
 - [x] 设计文档所有验收标准满足
 - [x] git status clean
-- [!] PR 创建（需要配置远程仓库）
+- [x] 代码已推送到远程仓库
+- [!] PR 创建（gh auth login 因网络超时失败，需手动创建）
+  - 打开：https://github.com/mbuemabratwn-cmd/eng/compare/main?expand=1
 
 ---
 
