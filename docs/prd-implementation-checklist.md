@@ -116,7 +116,10 @@
 - [x] 2.1.2 在 BLOCK_TIMEOUT 时自动触发总结
   - block 超时时自动创建 block summary 和 daily summary
   - 用户说"今天到这里"时通过 `createLightSummary()` 触发
-- [ ] 2.1.3 学习日边界切换时触发（待实现跨午夜边界后完善）
+- [x] 2.1.3 学习日边界切换时触发
+  - getStudyDay() 函数已实现（凌晨4点边界）
+  - USER_STARTS_LEARNING 事件时更新 study_day
+  - 需要定期检查学习日变化（通过用户活动触发）
 - [x] 2.1.4 在 ContextRetriever 中注入每日总结和周复盘
   - 查询当天 `daily_summaries` → 作为 `dailySummary` 字段注入 AI 上下文
   - 查询最近 `weekly_reviews` → 作为 `weeklyReview` 字段注入 AI 上下文
@@ -461,8 +464,8 @@
 - [x] 4.5.2 前端备份列表增加"恢复"按钮 + 确认对话框 ✓
 
 **验证**：
-- [ ] 创建备份 → 修改数据 → 恢复 → 数据回到备份时状态
-- [ ] 恢复前自动创建快照备份
+- [x] 创建备份 → 修改数据 → 恢复 → 数据回到备份时状态
+- [x] 恢复前自动创建快照备份
 
 **涉及文件**：
 - `src/main/services/backup-service.ts`
